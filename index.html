@@ -70,6 +70,7 @@ small { color: #aaa; }
 
 <div id="events"></div>
 
+<!-- 削除確認 -->
 <div id="confirmBox">
   <p>削除しますか？</p>
   <button onclick="confirmDelete()">OK</button>
@@ -81,11 +82,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getFirestore, collection, getDocs, deleteDoc, doc } 
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// Firebase設定
 const firebaseConfig = {
   apiKey: "AIzaSyA4R-yiS3aEmjcDOxkN4EWi3zWJEd6zU80",
   authDomain: "tkntesu3.firebaseapp.com",
   projectId: "tkntesu3",
-  storageBucket: "tkntesu3.firebasestorage.app",
+  storageBucket: "tkntesu3.appspot.com",
   messagingSenderId: "688848525125",
   appId: "1:688848525125:web:9f719ba24eb17f1e4c902c"
 };
@@ -96,6 +98,7 @@ const db = getFirestore(app);
 let allEvents = [];
 let deleteId = null;
 
+// 📦 データ取得
 async function loadEvents() {
   const snapshot = await getDocs(collection(db, "events"));
   allEvents = [];
@@ -110,11 +113,12 @@ async function loadEvents() {
   displayEvents(allEvents);
 }
 
+// 🖥 表示
 function displayEvents(events) {
   const div = document.getElementById("events");
   div.innerHTML = "";
 
-  events.reverse().forEach(e => {
+  events.slice().reverse().forEach(e => {
     div.innerHTML += `
       <div class="card">
         <div>[${e.category}]</div>
@@ -128,28 +132,42 @@ function displayEvents(events) {
   });
 }
 
-function filterEvents(category) {
+// 🔍 フィルター
+window.filterEvents = function(category) {
   if (category === "all") return displayEvents(allEvents);
   displayEvents(allEvents.filter(e => e.category === category));
-}
+};
 
-function deleteEvent(id) {
+// 🗑 削除ボタン押下
+window.deleteEvent = function(id) {
   deleteId = id;
   document.getElementById("confirmBox").style.display = "block";
-}
+};
 
-function closeConfirm() {
+// ❌ キャンセル
+window.closeConfirm = function() {
   deleteId = null;
   document.getElementById("confirmBox").style.display = "none";
-}
+};
 
-async function confirmDelete() {
-  if (!deleteId) return;
-  await deleteDoc(doc(db, "events", deleteId));
-  closeConfirm();
-  loadEvents();
-}
+// ✅ 削除実行
+window.confirmDelete = async function() {
+  try {
+    if (!deleteId) return;
 
+    await deleteDoc(doc(db, "events", deleteId));
+
+    alert("削除完了");
+    closeConfirm();
+    loadEvents();
+
+  } catch (e) {
+    console.error(e);
+    alert("削除エラー：" + e.message);
+  }
+};
+
+// 初期ロード
 loadEvents();
 </script>
 
