@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>同盟イベントポータル</title>
+<title>同盟ポータル</title>
 
 <style>
 body {
@@ -14,20 +14,19 @@ body {
 
 h1 { color: #00d4ff; }
 
-input, select, textarea {
-  width: 80%;
-  margin: 5px;
-  padding: 8px;
-  border-radius: 5px;
-  border: none;
+.nav {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  background: #132b45;
+  padding: 10px;
 }
 
-button {
+.nav button {
   background: #00d4ff;
   border: none;
   padding: 10px;
-  border-radius: 5px;
-  margin: 5px;
+  border-radius: 8px;
 }
 
 .card {
@@ -55,42 +54,22 @@ small { color: #aaa; }
 
 <body>
 
-<h1>🔥 同盟イベントポータル</h1>
+<div class="nav">
+  <button onclick="location.href='index.html'">🏠 ホーム</button>
+  <button onclick="location.href='post.html'">📝 投稿</button>
+</div>
 
-<h2>📝 投稿</h2>
-
-<input id="author" placeholder="投稿者名"><br>
-
-<select id="category">
-  <option value="戦争">戦争</option>
-  <option value="資源">資源</option>
-  <option value="討伐">討伐</option>
-  <option value="その他">その他</option>
-</select><br>
-
-<input id="title" placeholder="タイトル"><br>
-
-<input type="file" id="imageFile" accept="image/*"><br>
-
-<textarea id="content" placeholder="本文" rows="5"></textarea><br>
-
-<button onclick="addEvent()">投稿</button>
-
-<hr>
-
-<h2>📂 フィルター</h2>
+<h1>🔥 同盟イベント</h1>
 
 <select onchange="filterEvents(this.value)">
   <option value="all">全て</option>
   <option value="戦争">戦争</option>
   <option value="資源">資源</option>
   <option value="討伐">討伐</option>
-  <option value="その他">その他</option>
 </select>
 
 <div id="events"></div>
 
-<!-- 確認ポップ -->
 <div id="confirmBox">
   <p>削除しますか？</p>
   <button onclick="confirmDelete()">OK</button>
@@ -99,55 +78,22 @@ small { color: #aaa; }
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } 
+import { getFirestore, collection, getDocs, deleteDoc, doc } 
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } 
-from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-// 🔥 Firebase設定（ここ書き換え）
 const firebaseConfig = {
-  apiKey: "AIzaSyA4R-yiS3aEmjcDOxkN4EWi3zWJEd6zU80",
-  authDomain: "tkntesu3.firebaseapp.com",
-  projectId: "tkntesu3",
-  storageBucket: "tkntesu3.firebasestorage.app"
+  apiKey: "ここ",
+  authDomain: "ここ",
+  projectId: "ここ",
+  storageBucket: "ここ"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const storage = getStorage(app);
 
 let allEvents = [];
 let deleteId = null;
 
-// 投稿
-async function addEvent() {
-  const author = document.getElementById("author").value;
-  const category = document.getElementById("category").value;
-  const title = document.getElementById("title").value;
-  const content = document.getElementById("content").value;
-  const file = document.getElementById("imageFile").files[0];
-
-  let imageUrl = "";
-
-  if (file) {
-    const storageRef = ref(storage, "images/" + Date.now() + "_" + file.name);
-    await uploadBytes(storageRef, file);
-    imageUrl = await getDownloadURL(storageRef);
-  }
-
-  await addDoc(collection(db, "events"), {
-    author,
-    category,
-    title,
-    content,
-    image: imageUrl,
-    createdAt: new Date().toISOString()
-  });
-
-  loadEvents();
-}
-
-// 読み込み
 async function loadEvents() {
   const snapshot = await getDocs(collection(db, "events"));
   allEvents = [];
@@ -162,7 +108,6 @@ async function loadEvents() {
   displayEvents(allEvents);
 }
 
-// 表示
 function displayEvents(events) {
   const div = document.getElementById("events");
   div.innerHTML = "";
@@ -173,24 +118,19 @@ function displayEvents(events) {
         <div>[${e.category}]</div>
         <h2>${e.title}</h2>
         <small>${e.author} | ${new Date(e.createdAt).toLocaleString()}</small>
-
         ${e.image ? `<img src="${e.image}" style="width:100%; border-radius:10px;">` : ""}
-
         <p>${e.content}</p>
-
         <button onclick="deleteEvent('${e.id}')">削除</button>
       </div>
     `;
   });
 }
 
-// フィルター
 function filterEvents(category) {
   if (category === "all") return displayEvents(allEvents);
   displayEvents(allEvents.filter(e => e.category === category));
 }
 
-// 削除UI
 function deleteEvent(id) {
   deleteId = id;
   document.getElementById("confirmBox").style.display = "block";
@@ -203,7 +143,6 @@ function closeConfirm() {
 
 async function confirmDelete() {
   if (!deleteId) return;
-
   await deleteDoc(doc(db, "events", deleteId));
   closeConfirm();
   loadEvents();
