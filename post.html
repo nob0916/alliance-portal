@@ -26,6 +26,12 @@ button {
   padding: 10px;
   border-radius: 5px;
 }
+
+#loading {
+  display: none;
+  margin-top: 10px;
+  color: #00ffcc;
+}
 </style>
 </head>
 
@@ -49,6 +55,8 @@ button {
 
 <button onclick="addEvent()">投稿する</button>
 
+<div id="loading">投稿中...</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc } 
@@ -56,6 +64,7 @@ from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } 
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
+// 🔥 Firebase設定（修正済み）
 const firebaseConfig = {
   apiKey: "AIzaSyA4R-yiS3aEmjcDOxkN4EWi3zWJEd6zU80",
   authDomain: "tkntesu3.firebaseapp.com",
@@ -69,32 +78,59 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
+// 🚀 投稿処理
 async function addEvent() {
-  const author = document.getElementById("author").value;
-  const category = document.getElementById("category").value;
-  const title = document.getElementById("title").value;
-  const content = document.getElementById("content").value;
-  const file = document.getElementById("imageFile").files[0];
+  try {
+    document.getElementById("loading").style.display = "block";
 
-  let imageUrl = "";
+    const author = document.getElementById("author").value.trim();
+    const category = document.getElementById("category").value;
+    const title = document.getElementById("title").value.trim();
+    const content = document.getElementById("content").value.trim();
+    const file = document.getElementById("imageFile").files[0];
 
-  if (file) {
-    const storageRef = ref(storage, "images/" + Date.now());
-    await uploadBytes(storageRef, file);
-    imageUrl = await getDownloadURL(storageRef);
+    // ⚠ 入力チェック
+    if (!author || !title || !content) {
+      alert("必須項目を入力してください");
+      document.getElementById("loading").style.display = "none";
+      return;
+    }
+
+    let imageUrl = "";
+
+    // 🖼 画像アップロード
+    if (file) {
+      const storageRef = ref(storage, "images/" + Date.now() + "_" + file.name);
+      await uploadBytes(storageRef, file);
+      imageUrl = await getDownloadURL(storageRef);
+    }
+
+    // 📦 Firestore保存
+    await addDoc(collection(db, "events"), {
+      author,
+      category,
+      title,
+      content,
+      image: imageUrl,
+      createdAt: new Date().toISOString()
+    });
+
+    // 🧹 入力リセット
+    document.getElementById("author").value = "";
+    document.getElementById("title").value = "";
+    document.getElementById("content").value = "";
+    document.getElementById("imageFile").value = "";
+
+    alert("投稿完了！");
+
+    // 🏠 自動でホームへ
+    location.href = "index.html";
+
+  } catch (e) {
+    console.error(e);
+    alert("エラー：" + e.message);
+    document.getElementById("loading").style.display = "none";
   }
-
-  await addDoc(collection(db, "events"), {
-    author,
-    category,
-    title,
-    content,
-    image: imageUrl,
-    createdAt: new Date().toISOString()
-  });
-
-  alert("投稿完了！");
-  location.href = "index.html";
 }
 </script>
 
