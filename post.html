@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>投稿ページ</title>
+
+<style>
+body {
+  font-family: sans-serif;
+  background: #0b1a2a;
+  color: white;
+  text-align: center;
+}
+
+input, select, textarea {
+  width: 80%;
+  margin: 5px;
+  padding: 8px;
+  border-radius: 5px;
+  border: none;
+}
+
+button {
+  background: #00d4ff;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>📝 投稿</h1>
+
+<input id="author" placeholder="投稿者名"><br>
+
+<select id="category">
+  <option value="戦争">戦争</option>
+  <option value="資源">資源</option>
+  <option value="討伐">討伐</option>
+</select><br>
+
+<input id="title" placeholder="タイトル"><br>
+
+<input type="file" id="imageFile" accept="image/*"><br>
+
+<textarea id="content" placeholder="本文"></textarea><br>
+
+<button onclick="addEvent()">投稿する</button>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, addDoc } 
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } 
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+
+const firebaseConfig = {
+  apiKey: "ここ",
+  authDomain: "ここ",
+  projectId: "ここ",
+  storageBucket: "ここ"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+async function addEvent() {
+  const author = document.getElementById("author").value;
+  const category = document.getElementById("category").value;
+  const title = document.getElementById("title").value;
+  const content = document.getElementById("content").value;
+  const file = document.getElementById("imageFile").files[0];
+
+  let imageUrl = "";
+
+  if (file) {
+    const storageRef = ref(storage, "images/" + Date.now());
+    await uploadBytes(storageRef, file);
+    imageUrl = await getDownloadURL(storageRef);
+  }
+
+  await addDoc(collection(db, "events"), {
+    author,
+    category,
+    title,
+    content,
+    image: imageUrl,
+    createdAt: new Date().toISOString()
+  });
+
+  alert("投稿完了！");
+  location.href = "index.html";
+}
+</script>
+
+</body>
+</html>
