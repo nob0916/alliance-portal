@@ -37,6 +37,16 @@ h1 { color: #00d4ff; }
   text-align: left;
 }
 
+.card img {
+  width: 100%;
+  border-radius: 10px;
+}
+
+.card p {
+  /* 改行対応 */
+  white-space: pre-wrap;
+}
+
 small { color: #aaa; }
 
 #confirmBox {
@@ -128,7 +138,7 @@ function displayEvents(events) {
         <div>[${e.category}]</div>
         <h2>${e.title}</h2>
         <small>${e.author} | ${new Date(e.createdAt).toLocaleString()}</small>
-        ${e.image ? `<img src="${e.image}" style="width:100%; border-radius:10px;">` : ""}
+        ${e.image ? `<img src="${e.image}">` : ""}
         <p>${e.content}</p>
         <button onclick="deleteEvent('${e.id}')">削除</button>
       </div>
