@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>同盟ポータル</title>
+
+<style>
+body {
+  margin:0;
+  font-family: Arial;
+  background: radial-gradient(circle at top, #020617, #000);
+  color:#00f0ff;
+}
+
+header {
+  padding:10px;
+  text-align:center;
+  border-bottom:1px solid #00f0ff;
+  box-shadow:0 0 10px #00f0ff;
+}
+
+nav {
+  display:flex;
+  background:#020617;
+}
+
+nav button {
+  flex:1;
+  padding:10px;
+  background:none;
+  border:none;
+  color:#00f0ff;
+}
+
+nav button.active {
+  background:#00f0ff22;
+  box-shadow:0 0 10px #00f0ff;
+}
+section {
+  display:none;
+  padding:10px;
+}
+
+section.active {
+  display:block;
+}
+
+.card {
+  background:#020617;
+  border:1px solid #00f0ff44;
+  margin:10px 0;
+  padding:10px;
+  border-radius:10px;
+}
+
+.title {
+  font-size:16px;
+}
+
+button.add {
+  width:100%;
+  padding:10px;
+  margin:10px 0;
+  background:#00f0ff22;
+  border:1px solid #00f0ff;
+  color:#00f0ff;
+}
+
+select {
+  width:100%;
+  padding:8px;
+  margin:10px 0;
+  background:#020617;
+  color:#00f0ff;
+  border:1px solid #00f0ff;
+}
+
+img {
+  width:100%;
+  border-radius:10px;
+}
+
+footer {
+  position:fixed;
+  bottom:0;
+  width:100%;
+  background:#020617;
+  border-top:1px solid #00f0ff;
+  text-align:center;
+  font-size:12px;
+}
+</style>
+</head>
+
+<body>
+  
+<header>⚔ ALLIANCE SYSTEM ⚔</header>
+
+<nav>
+<button onclick="show('events')" class="active">MISSION</button>
+<button onclick="show('guides')">GUIDE</button>
+<button onclick="show('images')">GALLERY</button>
+<button onclick="show('rules')">RULE</button>
+</nav>
+
+<section id="events" class="active"></section>
+<section id="guides"></section>
+<section id="images"></section>
+<section id="rules"></section>
+
+<footer>SERVER ONLINE</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA4R-yiS3aEmjcDOxkN4EWi3zWJEd6zU80",
+  authDomain: "tkntesu3.firebaseapp.com",
+  projectId: "tkntesu3",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// タブ切り替え
+window.show = (id)=>{
+  document.querySelectorAll("section").forEach(s=>s.classList.remove("active"));
+  document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  event.target.classList.add("active");
+};
+
+// カテゴリー設定
+const categoryStyle = {
+  "KE": { icon: "🔥", color: "#ff4d4d" },
+  "SVS": { icon: "⚔", color: "#a855f7" },
+  "熊": { icon: "🐻", color: "#22c55e" },
+  "通常": { icon: "📦", color: "#38bdf8" }
+};
+
+let allEvents = [];
+
+// イベント読み込み
+async function loadEvents(){
+  const snap = await getDocs(collection(db,"events"));
+  allEvents = [];
+  snap.forEach(doc=> allEvents.push(doc.data()));
+  renderEvents(allEvents);
+}
+
+// イベント表示
+function renderEvents(list){
+  let html = `
+  <button class="add" onclick="addEvent()">＋MISSION追加</button>
+
+  <select onchange="filterCategory(this.value)">
+    <option value="all">全て</option>
+    <option value="キルイベ">KE</option>
+    <option value="SVS">SVS</option>
+    <option value="熊">熊</option>
+    <option value="通常">通常</option>
+  </select>
+  `;
+
+  list.forEach(d=>{
+    let style = categoryStyle[d.category] || { icon:"❓", color:"#888" };
+
+    html += `
+    <div class="card" style="border-left:5px solid ${style.color}">
+      <div class="title">${style.icon} ${d.title}</div>
+      <div style="color:${style.color}">TYPE: ${d.category}</div>
+      <div>TIME: ${d.time}</div>
+      <div>${d.desc}</div>
+    </div>`;
+  });
+
+  events.innerHTML = html;
+}
+
+// フィルター
+window.filterCategory = (cat)=>{
+  if(cat==="all") return renderEvents(allEvents);
+  renderEvents(allEvents.filter(e=>e.category===cat));
+};
+
+// 追加
+window.addEvent = async ()=>{
+  let title = prompt("イベント名");
+  let time = prompt("時間");
+  let desc = prompt("内容");
+  let category = prompt("カテゴリー（キルイベ / SVS / 熊 / 通常）");
+
+  await addDoc(collection(db,"events"),{
+    title,time,desc,category
+  });
+
+  loadEvents();
+};
+
+// ガイド
+async function loadGuides(){
+  const snap = await getDocs(collection(db,"guides"));
+  let html = `<button class="add" onclick="addGuide()">＋追加</button>`;
+  snap.forEach(doc=>{
+    let d = doc.data();
+    html += `<div class="card">${d.title}<br>${d.content}</div>`;
+  });
+  guides.innerHTML = html;
+}
+
+window.addGuide = async ()=>{
+  let title = prompt("タイトル");
+  let content = prompt("内容");
+  await addDoc(collection(db,"guides"),{title,content});
+  loadGuides();
+};
+
+// 画像
+async function loadImages(){
+  const snap = await getDocs(collection(db,"images"));
+  let html = `<button class="add" onclick="addImage()">＋追加</button>`;
+  snap.forEach(doc=>{
+    let d = doc.data();
+    html += `<div class="card"><img src="${d.url}"><br>${d.comment}</div>`;
+  });
+  images.innerHTML = html;
+}
+
+window.addImage = async ()=>{
+  let url = prompt("画像URL");
+  let comment = prompt("説明");
+  await addDoc(collection(db,"images"),{url,comment});
+  loadImages();
+};
+
+// ルール
+async function loadRules(){
+  const snap = await getDocs(collection(db,"rules"));
+  let html = "";
+  snap.forEach(doc=>{
+    html += `<div class="card">⚠ ${doc.data().text}</div>`;
+  });
+  rules.innerHTML = html;
+};
+
+// 初期読み込み
+loadEvents();
+loadGuides();
+loadImages();
+loadRules();
+
+</script>
+
+</body>
+</html>
