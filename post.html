@@ -37,7 +37,7 @@ button {
 
 <body>
 
-<h1>📝 投稿</h1>
+<h1>📝 投稿（デバッグ）</h1>
 
 <input id="author" placeholder="投稿者名"><br>
 
@@ -78,9 +78,10 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-// 🔥 ここが重要（グローバル化）
+// 🔥 デバッグ付き投稿処理
 window.addEvent = async function() {
   try {
+    console.log("投稿開始");
     document.getElementById("loading").style.display = "block";
 
     const author = document.getElementById("author").value.trim();
@@ -89,7 +90,8 @@ window.addEvent = async function() {
     const content = document.getElementById("content").value.trim();
     const file = document.getElementById("imageFile").files[0];
 
-    // 入力チェック
+    console.log("入力取得OK");
+
     if (!author || !title || !content) {
       alert("必須項目を入力してください");
       document.getElementById("loading").style.display = "none";
@@ -98,14 +100,28 @@ window.addEvent = async function() {
 
     let imageUrl = "";
 
-    // 画像アップロード
+    // 🖼 画像アップ（デバッグ強化）
     if (file) {
+      console.log("画像あり:", file.name);
+
       const storageRef = ref(storage, "images/" + Date.now() + "_" + file.name);
-      await uploadBytes(storageRef, file);
+
+      console.log("アップロード開始...");
+      await uploadBytes(storageRef, file)
+        .then(() => console.log("アップロード成功"))
+        .catch(e => {
+          console.error("アップロード失敗", e);
+          throw e;
+        });
+
+      console.log("URL取得開始...");
       imageUrl = await getDownloadURL(storageRef);
+      console.log("URL取得成功:", imageUrl);
+    } else {
+      console.log("画像なし");
     }
 
-    // Firestore保存
+    console.log("Firestore保存開始...");
     await addDoc(collection(db, "events"), {
       author,
       category,
@@ -115,11 +131,13 @@ window.addEvent = async function() {
       createdAt: new Date().toISOString()
     });
 
+    console.log("Firestore保存成功");
+
     alert("投稿完了！");
     location.href = "index.html";
 
   } catch (e) {
-    console.error(e);
+    console.error("エラー発生:", e);
     alert("エラー：" + e.message);
     document.getElementById("loading").style.display = "none";
   }
